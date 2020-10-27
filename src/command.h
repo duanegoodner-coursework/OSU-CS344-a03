@@ -21,6 +21,6 @@ struct command
 char* get_input(void);
 // struct command *build_command(char *input_line);
 //char **build_command(char *input_line);
-char **lsh_split_line(char *line, char **command_array);
+char **lsh_split_line(char *line, char **command, char **args, int *n_args);
 
 #endif
