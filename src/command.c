@@ -1,3 +1,7 @@
+// initial version of parsing code below taken from:
+// https://github.com/brenns10/lsh/blob/407938170e8b40d231781576e05282a41634848c/src/main.c
+// to at least help with troubleshooting. Made major modifications to get current form.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -15,9 +19,7 @@ char* get_input(void) {
 }
 
 
-// initial version of code below taken from:
-// https://github.com/brenns10/lsh/blob/407938170e8b40d231781576e05282a41634848c/src/main.c
-// to at least help with troubleshooting. Made major modifications to get current form.
+
 #define LSH_TOK_DELIM " \t\r\n\a"
 
 char **lsh_split_line(char *line, char **command, char **args, int *n_args)
@@ -33,7 +35,7 @@ char **lsh_split_line(char *line, char **command, char **args, int *n_args)
         args[index] = token;
         index++;    
   }
-    *n_args = index;
+    *n_args = index - 1;
     //args[index] = NULL;
 }
 
