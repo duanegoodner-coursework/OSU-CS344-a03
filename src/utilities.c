@@ -7,21 +7,22 @@ char* dsubstr_replace_all(char* orig, char* search, char* replace) {
 
   int size_delta = strlen(replace) - strlen(search);
 
-  char* new_str = orig;
-  char* ss_ptr = strstr(new_str, search);
+    char* new_str = orig;
+    char* ss_ptr = strstr(new_str, search);
   
-  while (ss_ptr != NULL) {
-    new_str = calloc(strlen(orig) + size_delta + 1, sizeof(char));
-    strncpy(new_str, orig, ss_ptr - orig);
-    strcat(new_str, replace);
-    ss_ptr = ss_ptr + strlen(search);
-    strcat(new_str, ss_ptr);
-    free(orig);
-    orig = new_str;
-    ss_ptr = strstr(orig, search);
-  }
+    while (ss_ptr != NULL) {
+      new_str = calloc(strlen(orig) + size_delta + 1, sizeof(char));
+      strncpy(new_str, orig, ss_ptr - orig);
+      strcat(new_str, replace);
+      ss_ptr = ss_ptr + strlen(search);
+      strcat(new_str, ss_ptr);
+      free(orig);
+      orig = new_str;
+      ss_ptr = strstr(orig, search);
+    }
 
   return new_str;
+
 
 }
 

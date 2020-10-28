@@ -26,9 +26,11 @@ struct command* get_prelim_command(void) {
 void expand_var(struct command* curr_command, char* old_str, char* new_str) {
     
     for (int arg_index = 0; arg_index < curr_command->arg_count; arg_index++) {
-        curr_command->args[arg_index] = dsubstr_replace_all(curr_command->args[arg_index], old_str, new_str);
+        char* ss_ptr = strstr(curr_command->args[arg_index], old_str);
+        if (ss_ptr != NULL){
+            curr_command->args[arg_index] = dsubstr_replace_all(curr_command->args[arg_index], old_str, new_str);
+        }
     }
-    
 } 
 
 char* get_input_line(void) {
