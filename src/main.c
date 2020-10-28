@@ -8,7 +8,7 @@
 #include "utilities.h"
 
 #define C_PROMPT ":"
-
+#define COMMENT_CHAR "#"
 
 int main(void) {
 
@@ -21,8 +21,11 @@ int main(void) {
         printf(C_PROMPT);
         fflush(stdout);  
         struct command *curr_command = get_prelim_command();
+        if (curr_command == NULL || is_comment(curr_command)) {
+            continue;
+        }
         expand_var(curr_command, expand_str, shell_pid_str);
-        printf("\n");
+        printf("%s\n", curr_command->args[0]);
      }
 
     return 0;

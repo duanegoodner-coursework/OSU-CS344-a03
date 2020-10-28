@@ -26,6 +26,7 @@ bool is_bg_command(char** inputs, int* n_inputs);
 struct command *build_prelim_command(char** inputs, int *n_inputs);
 struct command *get_prelim_command(void);
 void expand_var(struct command* curr_command, char* old_str, char* new_str);
-//char **lsh_split_line(char *line, char **command, char **args, int *n_args);
+bool is_comment(struct command* curr_command);
+bool is_null(struct command* curr_command);
 
 #endif

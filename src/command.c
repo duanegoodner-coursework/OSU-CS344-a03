@@ -12,11 +12,17 @@
 
 
 struct command* get_prelim_command(void) {
-    int n_inputs;
+    int n_inputs = 0;
+    struct command *curr_command;
     
     char* curr_line = get_input_line();
     char** inputs = parse_input_line(curr_line, &n_inputs);
-    struct command *curr_command = build_prelim_command(inputs, &n_inputs);
+
+    if (n_inputs == 0) {
+        curr_command = NULL;
+    } else {
+        curr_command = build_prelim_command(inputs, &n_inputs);
+    }    
     free(curr_line);
     free(inputs);
 
@@ -123,9 +129,23 @@ struct command *build_prelim_command(char** inputs, int *n_inputs) {
         args[index] = calloc(strlen(inputs[index]), sizeof(char));
         strcpy(args[index], inputs[index]);
     }
-
     curr_command->args = args;
-
     return curr_command;
+}
 
+#define COMMENT_CHAR '#'
+bool is_comment(struct command *curr_command) {
+    if (curr_command->args[0][0] == COMMENT_CHAR) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool is_null(struct command *curr_command) {
+    if (curr_command->args[0] == NULL) {
+        return true;
+    } else {
+        return false;
+    }
 }
