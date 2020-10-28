@@ -7,10 +7,11 @@ char* dsubstr_replace_all(char* orig, char* search, char* replace) {
 
   int size_delta = strlen(replace) - strlen(search);
 
-  char* ss_ptr = strstr(orig, search);
+  char* new_str = orig;
+  char* ss_ptr = strstr(new_str, search);
   
   while (ss_ptr != NULL) {
-    char* new_str = calloc(strlen(orig) + size_delta + 1, sizeof(char));
+    new_str = calloc(strlen(orig) + size_delta + 1, sizeof(char));
     strncpy(new_str, orig, ss_ptr - orig);
     strcat(new_str, replace);
     ss_ptr = ss_ptr + strlen(search);
@@ -20,7 +21,7 @@ char* dsubstr_replace_all(char* orig, char* search, char* replace) {
     ss_ptr = strstr(orig, search);
   }
 
-  return orig;
+  return new_str;
 
 }
 
