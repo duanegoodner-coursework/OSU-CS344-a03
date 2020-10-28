@@ -10,7 +10,6 @@
 
 struct command
 {
-    char *command;
     int arg_count;
     char **args;
     char *input_redirect;
@@ -18,9 +17,12 @@ struct command
     bool background;
 };
 
-char* get_input(void);
-// struct command *build_command(char *input_line);
-//char **build_command(char *input_line);
-char **lsh_split_line(char *line, char **command, char **args, int *n_args);
+char* get_input_line(void);
+char** parse_input(char *curr_line, int *n_inputs);
+bool is_redirect_out(char* input);
+bool is_redirect_in(char* input);
+bool is_bg_command(char** inputs, int* n_inputs);
+struct command *build_command(char** inputs, int *n_inputs);
+//char **lsh_split_line(char *line, char **command, char **args, int *n_args);
 
 #endif
