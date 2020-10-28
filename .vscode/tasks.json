@@ -11,8 +11,7 @@
         "-o",
         "${fileDirname}/${fileBasenameNoExtension}",
         "&&",
-        "${fileDirname}/${fileBasenameNoExtension}",
-        "${fileDirname}/movie_sample_1.csv"
+        "${fileDirname}/${fileBasenameNoExtension}"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

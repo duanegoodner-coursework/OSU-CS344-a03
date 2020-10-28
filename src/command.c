@@ -8,8 +8,28 @@
 #include <string.h>
 
 #include "command.h"
+#include "utilities.h"
 
 
+struct command* get_prelim_command(void) {
+    int n_inputs;
+    
+    char* curr_line = get_input_line();
+    char** inputs = parse_input_line(curr_line, &n_inputs);
+    struct command *curr_command = build_prelim_command(inputs, &n_inputs);
+    free(curr_line);
+    free(inputs);
+
+    return curr_command;
+}
+
+void expand_var(struct command* curr_command, char* old_str, char* new_str) {
+    
+    for (int arg_index = 0; arg_index < curr_command->arg_count; arg_index++) {
+        dsubstr_replace_all(curr_command->args[arg_index], old_str, new_str);
+    }
+    
+} 
 
 char* get_input_line(void) {
     char *curr_line = NULL;
@@ -20,9 +40,7 @@ char* get_input_line(void) {
 }
 
 #define DELIMITERS " \t\r\n\a"
-
-
-char** parse_input(char *curr_line, int *n_inputs) {
+char** parse_input_line(char *curr_line, int *n_inputs) {
     int index = 0;
     char** inputs = malloc(MAX_ARGS + 7);
     char* token;
@@ -68,41 +86,44 @@ bool is_bg_command(char** inputs, int *n_inputs) {
     }
 }
 
-struct command *build_command(char** inputs, int *n_inputs) {
+struct command *build_prelim_command(char** inputs, int *n_inputs) {
     
-    struct command *new_command = malloc(sizeof(struct command));
+    struct command *curr_command = malloc(sizeof(struct command));
     int index;
     int index_limit = *n_inputs;
     int arg_count = 0;
 
     if (is_bg_command(inputs, n_inputs)) {
         index_limit--;
-        new_command->background = true;
+        curr_command->background = true;
     } else {
-        new_command->background = false;
+        curr_command->background = false;
     }
 
     for (index = 0; index < index_limit; index++) { //stop before final char
         if (is_redirect_in(inputs[index])) {
-            new_command->input_redirect = inputs[index + 1];
+            curr_command->input_redirect = calloc(strlen(inputs[index + 1]), sizeof(char));
+            strcpy(curr_command->input_redirect, inputs[index + 1]);
             index++;
         } else if (is_redirect_out(inputs[index])) {
-            new_command->output_redirect = inputs[index + 1];
+            curr_command->output_redirect = calloc(strlen(inputs[index + 1]), sizeof(char));
+            strcpy(curr_command->output_redirect, inputs[index + 1]);
             index++;
         } else {
             arg_count++;
         }
     }
-    new_command->arg_count = arg_count;
+    curr_command->arg_count = arg_count;
 
     char** args = malloc(arg_count * sizeof(char*));
 
     for (index = 0; index < arg_count; index++) {
-        args[index] = inputs[index];
+        args[index] = calloc(strlen(inputs[index]), sizeof(char));
+        strcpy(args[index], inputs[index]);
     }
 
-    new_command->args = args;
+    curr_command->args = args;
 
-    return new_command;
+    return curr_command;
 
 }
