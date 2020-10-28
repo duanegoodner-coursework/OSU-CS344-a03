@@ -3,22 +3,25 @@
 #include <stdlib.h>
 
 
-void dsubstr_replace_all(char* orig, char* search, char* replace) {
+char* dsubstr_replace_all(char* orig, char* search, char* replace) {
 
   int size_delta = strlen(replace) - strlen(search);
 
   char* ss_ptr = strstr(orig, search);
   
   while (ss_ptr != NULL) {
-    char* temp = calloc(strlen(orig) + size_delta + 1, sizeof(char));
-    strncpy(temp, orig, ss_ptr - orig);
-    strcat(temp, replace);
+    char* new_str = calloc(strlen(orig) + size_delta + 1, sizeof(char));
+    strncpy(new_str, orig, ss_ptr - orig);
+    strcat(new_str, replace);
     ss_ptr = ss_ptr + strlen(search);
-    strcat(temp, ss_ptr);
+    strcat(new_str, ss_ptr);
     free(orig);
-    orig = temp;
+    orig = new_str;
     ss_ptr = strstr(orig, search);
   }
+
+  return orig;
+
 }
 
 char* int_to_dynstr(int n) {
