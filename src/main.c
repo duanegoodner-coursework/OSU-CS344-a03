@@ -19,6 +19,8 @@ int status_bltin(struct command* curr_command);
 int get_num_bltins(void);
 
 int execute_command(struct command* curr_command);
+// int launch_foreground(struct command* curr_command);
+// int launch_background(struct command* curr_command);
 
 
 char *bltin_funct_names[] = {
@@ -39,17 +41,23 @@ int get_num_bltins() {
 
 int execute_command(struct command* curr_command) {
     
+    
+    // Check if curr_command is a built-in function (and if it is, execute)
+    //TO DO: remove intermediate num_bltins and comparison vars after debug done
     int num_bltins = get_num_bltins();
-
     for (int index = 0; index < num_bltins; index++) {
         int comparison = strcmp(curr_command->args[index], bltin_funct_names[index]);
         if (comparison == 0) {
             return (*bltin_funct_ptrs[index]) (curr_command);
         }
     }
+
+    // if (curr_command->background) {
+    //     return launch_background(curr_command);
+    // } else {
+    //     return launch_foreground(curr_command);
+    // }  
 }
-
-
 
 int cd_bltin(struct command* cd_command) {
     
@@ -62,7 +70,8 @@ int cd_bltin(struct command* cd_command) {
         chdir_return = chdir(cd_command->args[1]);
     }
 
-    char* new_dir = getcwd(NULL, 90);
+    // for testing only:
+    //char* new_dir = getcwd(NULL, 90);
 
 
     return chdir_return;

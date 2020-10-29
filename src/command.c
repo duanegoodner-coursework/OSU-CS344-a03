@@ -101,14 +101,19 @@ struct command *build_prelim_command(char** inputs, int *n_inputs) {
     int index_limit = *n_inputs;
     int arg_count = 0;
 
+    
+    // check if curr_command is intended to run in background
     if (is_bg_command(inputs, n_inputs)) {
-        index_limit--;
         curr_command->background = true;
+        index_limit--;
     } else {
         curr_command->background = false;
     }
 
-    for (index = 0; index < index_limit; index++) { //stop before final char
+    
+    // Gather redirect info and count number of actual args.
+    // Redirect symbols and filenames will not go into args.
+    for (index = 0; index < index_limit; index++) {
         if (is_redirect_in(inputs[index])) {
             curr_command->input_redirect = calloc(strlen(inputs[index + 1]), sizeof(char));
             strcpy(curr_command->input_redirect, inputs[index + 1]);
@@ -118,18 +123,22 @@ struct command *build_prelim_command(char** inputs, int *n_inputs) {
             strcpy(curr_command->output_redirect, inputs[index + 1]);
             index++;
         } else {
-            arg_count++;
+            arg_count++; 
         }
     }
     curr_command->arg_count = arg_count;
 
+    // need (arg_count + 1) elements so we can have NULL as final array element 
     char** args = malloc(arg_count * sizeof(char*));
-
+   
     for (index = 0; index < arg_count; index++) {
         args[index] = calloc(strlen(inputs[index]), sizeof(char));
         strcpy(args[index], inputs[index]);
     }
+    
+    args[arg_count] = NULL;
     curr_command->args = args;
+    
     return curr_command;
 }
 
