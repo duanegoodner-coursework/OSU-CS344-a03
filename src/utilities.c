@@ -7,8 +7,8 @@ char* dsubstr_replace_all(char* orig, char* search, char* replace) {
 
   int size_delta = strlen(replace) - strlen(search);
 
-    char* new_str = orig;
-    char* ss_ptr = strstr(new_str, search);
+  char* new_str = orig;
+  char* ss_ptr = strstr(new_str, search);
   
     while (ss_ptr != NULL) {
       new_str = calloc(strlen(orig) + size_delta + 1, sizeof(char));
@@ -20,10 +20,7 @@ char* dsubstr_replace_all(char* orig, char* search, char* replace) {
       orig = new_str;
       ss_ptr = strstr(orig, search);
     }
-
   return new_str;
-
-
 }
 
 char* int_to_dynstr(int n) {

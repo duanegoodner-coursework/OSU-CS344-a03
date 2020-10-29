@@ -7,8 +7,66 @@
 #include "command.h"
 #include "utilities.h"
 
-#define C_PROMPT ":"
+#define C_PROMPT ": "
 #define COMMENT_CHAR "#"
+#define DEFAULT_DIR "HOME"
+
+
+int exit_bltin(struct command* curr_command);
+int cd_bltin(struct command* curr_command);
+int status_bltin(struct command* curr_command);
+
+int get_num_bltins(void);
+
+int execute_command(struct command* curr_command);
+
+
+char *bltin_funct_names[] = {
+    "cd"
+    //"exit",
+    //"status"
+};
+
+int (*bltin_funct_ptrs[]) (struct command*) = {
+    &cd_bltin
+    //&exit_bltin,
+    //&status_bltin
+};
+
+int get_num_bltins() {
+    return sizeof(bltin_funct_names) / sizeof (char*);
+}
+
+int execute_command(struct command* curr_command) {
+    
+    int num_bltins = get_num_bltins();
+
+    for (int index = 0; index < num_bltins; index++) {
+        int comparison = strcmp(curr_command->args[index], bltin_funct_names[index]);
+        if (comparison == 0) {
+            return (*bltin_funct_ptrs[index]) (curr_command);
+        }
+    }
+}
+
+
+
+int cd_bltin(struct command* cd_command) {
+    
+    int chdir_return;
+    
+    if (cd_command->arg_count == 1) {
+        char* default_dir = getenv("HOME");
+        chdir_return = chdir(default_dir);
+    } else {
+        chdir_return = chdir(cd_command->args[1]);
+    }
+
+    char* new_dir = getcwd(NULL, 90);
+
+
+    return chdir_return;
+}
 
 int main(void) {
 
@@ -25,6 +83,7 @@ int main(void) {
             continue;
         }
         expand_var(curr_command, expand_str, shell_pid_str);
+        execute_command(curr_command);
         printf("%s\n", curr_command->args[0]);
      }
 

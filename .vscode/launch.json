@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug src movies_by_year",
+      "name": "Debug src smallsh",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/src/smallsh",  //edit path as needed
