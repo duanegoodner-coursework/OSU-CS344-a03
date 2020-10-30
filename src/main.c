@@ -151,8 +151,8 @@ void set_fgchild_sighandlers() {
     sigaction(SIGINT, &SIGINT_action, NULL);
 }
 
-void redirect_ouptut(char* new_out_path) {
-    int out_fd = open(new_out_path, O_WRONLY | O_CREAT | O_TRUNC, 640);
+int redirect_ouptut(char* new_out_path) {
+    int out_fd = open(new_out_path, O_WRONLY | O_CREAT | O_TRUNC, 0640);
     if (out_fd == -1) {
         fprintf(stderr, "Failed open %s for output", new_out_path);
         exit(1);
@@ -202,7 +202,7 @@ int launch_foreground(struct command* curr_command) {
         }
               
         // use execv to load and run new program
-        execv(curr_command->args[0], curr_command->args);
+        execvp(curr_command->args[0], curr_command->args);
 
         // if execv fails:
         fprintf(stderr, "could not find command %s", curr_command->args[0]);
@@ -226,9 +226,9 @@ int launch_foreground(struct command* curr_command) {
     // so that everything except for built-in exit can return 0 (more conventional)
 }
 
-// could have status call this function but would need to declare earlier
-void report_last_fg_end(void) {
-    printf("%s %d\n", last_fg_endmsg, last_fg_endsig);  
+void force_report_last_fg_end(void) {
+    printf("%s %d\n", last_fg_endmsg, last_fg_endsig);
+    last_fg_terminated = false; 
 }
 
 int launch_background(struct command* curr_command);
@@ -249,7 +249,7 @@ int main(void) {
         // TODO: Modify SIGSTP handler so that it only changes bool, then put msg function here
         // TODO: Consider placing pointers to any pre-prompt messages in an array?? 
         if (last_fg_terminated) {
-            report_last_fg_end();
+            force_report_last_fg_end();
         }
         printf(C_PROMPT);
         fflush(stdout);  
