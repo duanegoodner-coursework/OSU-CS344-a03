@@ -24,7 +24,7 @@ bool is_redirect_out(char* input);
 bool is_redirect_in(char* input);
 bool is_bg_command(char** inputs, int* n_inputs);
 struct command *build_prelim_command(char** inputs, int *n_inputs);
-struct command *get_prelim_command(void);
+struct command *get_command(char* expand_wc, char* expand_repl);
 void expand_var(struct command* curr_command, char* old_str, char* new_str);
 bool is_comment(struct command* curr_command);
 bool is_null(struct command* curr_command);
