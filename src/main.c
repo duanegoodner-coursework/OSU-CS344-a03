@@ -22,6 +22,7 @@
 
 // TO DO: add fflush() after every print statement
 
+// consider adding command structure as a member of pid_node
 struct bgpid_node
 {
     pid_t process_id;
@@ -29,7 +30,7 @@ struct bgpid_node
 };
 struct bgpid_node *bg_list_head = NULL;
 struct bgpid_node *bg_list_tail = NULL;
-//struct bgpid_node* create_bg_pidnode(pid_t process_id);
+
 
 int last_fg_endsig = 0;
 char* last_fg_endmsg = NO_FG_RUN_YET;
@@ -71,6 +72,8 @@ int get_bltin_index(struct command* curr_command) {
 }
 
 void killall_bgprocs(struct bgpid_node* bgpid_list) {
+    // TO DO: change var names to be consistent with usage in zombie kill funct
+    // Should be OK not doing and free() since program exits immediately after this funct runs
     while (bgpid_list != NULL) {
         kill(bgpid_list->process_id, SIGKILL);
         bgpid_list = bgpid_list->next;
@@ -110,8 +113,8 @@ int exit_bltin(struct command* exit_command) {
 }
 
 
-#define ENTER_FG_ONLY_MSG "Entering foreground-only mode (& is now ignored)\n"
-#define EXIT_FG_ONLY_MSG "Exiting foreground-only mode\n"
+#define ENTER_FG_ONLY_MSG "Entering foreground-only mode (& is now ignored)\n\n"
+#define EXIT_FG_ONLY_MSG "Exiting foreground-only mode\n\n"
 void handle_SIGTSTP (int signo) {
     //TO DO: modify so handler only changes bool, then use separate function
     //to output messages at start of main while loop.
@@ -205,7 +208,7 @@ int launch_foreground(struct command* curr_command) {
         execvp(curr_command->args[0], curr_command->args);
 
         // if execv fails:
-        fprintf(stderr, "could not find command %s", curr_command->args[0]);
+        fprintf(stderr, "could not find command %s\n", curr_command->args[0]);
         exit(1);
 
     // parent branch
@@ -231,7 +234,122 @@ void force_report_last_fg_end(void) {
     last_fg_terminated = false; 
 }
 
-int launch_background(struct command* curr_command);
+struct bgpid_node* create_bg_pidnode(pid_t process_id) {
+    
+    struct bgpid_node* new_bg_pid_node = malloc(sizeof(struct bgpid_node));
+    new_bg_pid_node->process_id = process_id;
+    new_bg_pid_node->next = NULL;
+
+    return new_bg_pid_node;
+}
+
+void add_bgpid_node(struct bgpid_node* new_bg_pid_node) {
+// TODO: make generic functions for handling linked lists
+    if (bg_list_head == NULL) {
+        bg_list_head = new_bg_pid_node;
+        bg_list_tail = new_bg_pid_node;
+    } else {
+        bg_list_tail->next = new_bg_pid_node;
+        bg_list_tail = bg_list_tail->next;  // could use new_bg_pid_node
+    }
+}
+
+void start_tracking_bg(pid_t bg_process_id) {
+    add_bgpid_node(create_bg_pidnode(bg_process_id));
+    printf("background pid is %d", bg_process_id);
+}
+
+void remove_bgpid_node(struct bgpid_node* curr_node, struct bgpid_node* prev_node) {
+// consider adding a return value that confirms removal is successful
+// consider changing variable name to dead node to match calling function name
+    if (curr_node == bg_list_head && curr_node == bg_list_tail) {
+        bg_list_head = NULL;
+        bg_list_tail = NULL; 
+    } else if (curr_node == bg_list_head) {
+        bg_list_head = curr_node->next;
+        curr_node->next = NULL; // unnecessary???
+    } else {
+        prev_node->next = curr_node->next;
+        curr_node->next = NULL; // unnecessary???
+        if (curr_node == bg_list_head) {
+            bg_list_tail = prev_node;
+        } 
+    }   
+    free(curr_node);
+}
+
+void remove_zombies(void) {
+    int bgchild_status;
+
+    struct bgpid_node* curr_node = bg_list_head;
+    struct bgpid_node* prev_node = NULL;
+    struct bgpid_node* dead_node = NULL;
+
+    while (curr_node != NULL) {
+        if (waitpid(curr_node->process_id, &bgchild_status, WNOHANG)) {
+            printf("background pid %d is done: ", curr_node->process_id);
+            fflush(stdout);
+            if (WIFEXITED(bgchild_status)) {
+                printf("exit value %d", WEXITSTATUS(bgchild_status));
+            } else {
+                printf("terminated by signal %d", WTERMSIG(bgchild_status));
+                fflush(stdout);
+            }
+            kill(curr_node->process_id, SIGKILL);
+            dead_node = curr_node;
+            curr_node = curr_node->next;
+            remove_bgpid_node(dead_node, prev_node);  // this function calls free(dead_node)
+            continue; // already advanced curr_node
+        }
+        curr_node = curr_node->next;
+    }
+
+    potential_zombies = false;
+}
+
+#define DEFAULT_BG_REDIRECT "/dev/null" //may need to be char* ?
+int launch_background(struct command* curr_command) {
+// foreground and background launch codes pretty similar. mayber refactor into one funct?
+// keep separate at least until confirmed both work.
+
+    int bgchild_status;
+    pid_t bgchild_pid = fork();
+
+    if (bgchild_pid == -1) {
+        perror("fork() failed.");
+        exit(1);
+    
+    //child branch
+    } else if (bgchild_pid == 0) {
+
+        //add signal handlers:
+        // non needed? inherits SIGINT SIG_IGN from parent.
+
+        //set up redirects
+        if (curr_command->output_redirect == NULL) {
+            redirect_ouptut(DEFAULT_BG_REDIRECT);
+        } else {
+            redirect_ouptut(curr_command->output_redirect);
+        }
+        if (curr_command->input_redirect == NULL) {
+            redirect_input(DEFAULT_BG_REDIRECT);
+        } else {
+            redirect_input(curr_command->input_redirect);
+        }
+
+        //execv call
+        execvp(curr_command->args[0], curr_command->args);
+
+        //handle execv failure
+        fprintf(stderr, "could not find command %s\n", curr_command->args[0]);
+        exit(1);        
+
+    } else {
+        start_tracking_bg(bgchild_pid);
+    }
+
+    return 1;
+}
 
 
 int main(void) {
@@ -251,6 +369,9 @@ int main(void) {
         if (last_fg_terminated) {
             force_report_last_fg_end();
         }
+        if (potential_zombies) {
+            remove_zombies();
+        }
         printf(C_PROMPT);
         fflush(stdout);  
         struct command *curr_command = get_command(expand_str, shell_pid_str);
@@ -265,9 +386,9 @@ int main(void) {
         if (bltin_index >= 0) {
             run_flag = (*bltin_funct_ptrs[bltin_index]) (curr_command);
         } 
-        // else if (bg_launch_allowed && curr_command->background) {
-        //     run_flag = launch_background(curr_command);
-        // }
+        else if (bg_launch_allowed && curr_command->background) {
+            run_flag = launch_background(curr_command);
+        }
         else {
             run_flag = launch_foreground(curr_command);
         }
