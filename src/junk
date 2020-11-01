@@ -1,0 +1,16 @@
+command.c
+command.h
+command.o
+execute.c
+execute.h
+globals.h
+junk
+junk2
+main.c
+main.o
+makefile
+smallsh
+test
+utilities.c
+utilities.h
+utilities.o

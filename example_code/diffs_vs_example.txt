@@ -1,0 +1,5 @@
+Nov 1 2020 19:40
+ - foreground sleep followed by immediate command in example shows command prompt before the entered text. 
+ - my program shows blank line during sleep. this line can accept input, and command gets executed after sleep when prompt reappears on next line. command does NOT reappear after prompt.
+
+ - date, foreground sleep 20, date: shows a 25 sec time interval instead of 20s between the two date stamps.

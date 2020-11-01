@@ -13,12 +13,16 @@
 #include "utilities.h"
 
 #define C_PROMPT ": "
+#define NEWLINE "\n"
+#define NEWLINE_C_PROMPT "\n: "
 #define COMMENT_CHAR "#"
 #define DEFAULT_DIR "HOME"
 
 #define NO_FG_RUN_YET "No foreground processes run yet, but per instructions, report exit status"
 #define LAST_FG_TERMINATED "The last foreground process was terminated by signal"
-#define LAST_FG_EXITED "The last foreground process terminated normally with exit status"
+#define LAST_FG_EXITED "The last foreground process exited normally with exit status"
+
+#define NEWLINE "\n"
 
 // TO DO: add fflush() after every print statement
 
@@ -113,22 +117,26 @@ int exit_bltin(struct command* exit_command) {
 }
 
 
-#define ENTER_FG_ONLY_MSG "Entering foreground-only mode (& is now ignored)\n\n"
-#define EXIT_FG_ONLY_MSG "Exiting foreground-only mode\n\n"
+#define ENTER_FG_ONLY_MSG "\nEntering foreground-only mode (& is now ignored)\n"
+#define EXIT_FG_ONLY_MSG "\nExiting foreground-only mode\n"
 void handle_SIGTSTP (int signo) {
     //TO DO: modify so handler only changes bool, then use separate function
     //to output messages at start of main while loop.
     bg_launch_allowed = !bg_launch_allowed;
     if (!bg_launch_allowed) {
-        write(STDOUT_FILENO, ENTER_FG_ONLY_MSG, 49);
+        write(STDOUT_FILENO, ENTER_FG_ONLY_MSG, 50);
     } else {
-        write(STDOUT_FILENO, EXIT_FG_ONLY_MSG, 29);
+        write(STDOUT_FILENO, EXIT_FG_ONLY_MSG, 30);
     }
     write(STDOUT_FILENO, C_PROMPT, 2);       
 }
 
+// declare now since next function needs it.
+// TODO: clean up declarations & function organization
+void remove_zombies(void);
+
 void handle_SIGCHLD (int signo) {
-    potential_zombies = true;
+    remove_zombies();
 }
 
 void set_shell_sighandlers() {
@@ -152,6 +160,16 @@ void set_fgchild_sighandlers() {
     SIGINT_action.sa_handler = SIG_DFL;
     SIGINT_action.sa_flags = SA_RESTART; // Is SA_RESTART flag necessary???
     sigaction(SIGINT, &SIGINT_action, NULL);
+
+    struct sigaction ignore_action = {0};
+    ignore_action.sa_handler = SIG_IGN;
+    sigaction(SIGTSTP, &ignore_action, NULL);
+}
+
+void set_bgchild_sighandlers() {
+    struct sigaction ignore_action = {0};
+    ignore_action.sa_handler = SIG_IGN;
+    sigaction(SIGTSTP, &ignore_action, NULL);
 }
 
 int redirect_ouptut(char* new_out_path) {
@@ -171,7 +189,8 @@ int redirect_ouptut(char* new_out_path) {
 void redirect_input(char* new_in_path) {
     int in_fd = open(new_in_path, O_RDONLY);
     if (in_fd == -1) {
-        fprintf(stderr, "cannot open %s for input", new_in_path);
+        fprintf(stderr, "cannot open %s for input\n", new_in_path);
+        fflush(stdout);
         exit(1);
     }
 
@@ -208,7 +227,7 @@ int launch_foreground(struct command* curr_command) {
         execvp(curr_command->args[0], curr_command->args);
 
         // if execv fails:
-        fprintf(stderr, "could not find command %s\n", curr_command->args[0]);
+        fprintf(stderr, "%s: no such file or directory\n", curr_command->args[0]);
         exit(1);
 
     // parent branch
@@ -256,15 +275,17 @@ void add_bgpid_node(struct bgpid_node* new_bg_pid_node) {
 
 void start_tracking_bg(pid_t bg_process_id) {
     add_bgpid_node(create_bg_pidnode(bg_process_id));
-    printf("background pid is %d", bg_process_id);
+    printf("background pid is %d\n", bg_process_id);
+    fflush(stdout);
 }
 
 void remove_bgpid_node(struct bgpid_node* curr_node, struct bgpid_node* prev_node) {
 // consider adding a return value that confirms removal is successful
 // consider changing variable name to dead node to match calling function name
+    // write(STDOUT_FILENO, "\n1b\n", 4);
     if (curr_node == bg_list_head && curr_node == bg_list_tail) {
         bg_list_head = NULL;
-        bg_list_tail = NULL; 
+        bg_list_tail = NULL;
     } else if (curr_node == bg_list_head) {
         bg_list_head = curr_node->next;
         curr_node->next = NULL; // unnecessary???
@@ -274,10 +295,14 @@ void remove_bgpid_node(struct bgpid_node* curr_node, struct bgpid_node* prev_nod
         if (curr_node == bg_list_head) {
             bg_list_tail = prev_node;
         } 
-    }   
+    }
     free(curr_node);
 }
 
+#define BG_DONE_MSG_START "background pid "
+#define BG_DONE_MSG_END " is done: "
+#define BG_EXIT_MSG "exit value "
+#define BG_TERM_MSG "terminated by signal "
 void remove_zombies(void) {
     int bgchild_status;
 
@@ -287,13 +312,25 @@ void remove_zombies(void) {
 
     while (curr_node != NULL) {
         if (waitpid(curr_node->process_id, &bgchild_status, WNOHANG)) {
-            printf("background pid %d is done: ", curr_node->process_id);
-            fflush(stdout);
+            char* process_id_str = malloc_atoi(curr_node->process_id);
+            int process_id_str_len = strlen_int(curr_node->process_id);
+            write(STDOUT_FILENO, BG_DONE_MSG_START, 15);
+            write(STDOUT_FILENO, process_id_str, process_id_str_len);
+            write(STDOUT_FILENO, BG_DONE_MSG_END, 10);
             if (WIFEXITED(bgchild_status)) {
-                printf("exit value %d", WEXITSTATUS(bgchild_status));
+                int exit_status = WEXITSTATUS(bgchild_status);
+                char* exit_status_str = malloc_atoi(exit_status);
+                int exit_status_str_len = strlen_int(exit_status);
+                write(STDOUT_FILENO, BG_EXIT_MSG, 11);
+                write(STDOUT_FILENO, exit_status_str, exit_status_str_len);
+                write(STDOUT_FILENO, NEWLINE_C_PROMPT, 3);
             } else {
-                printf("terminated by signal %d", WTERMSIG(bgchild_status));
-                fflush(stdout);
+                int term_signal = WTERMSIG(bgchild_status);
+                char* term_signal_str = malloc_atoi(term_signal);
+                int term_signal_str_len = strlen_int(term_signal);
+                write(STDOUT_FILENO, BG_TERM_MSG, 21);
+                write(STDOUT_FILENO, term_signal_str, term_signal_str_len);
+                write(STDOUT_FILENO, NEWLINE, 1);
             }
             kill(curr_node->process_id, SIGKILL);
             dead_node = curr_node;
@@ -304,7 +341,7 @@ void remove_zombies(void) {
         curr_node = curr_node->next;
     }
 
-    potential_zombies = false;
+    potential_zombies = false;  // TBD if this'll be used. If decide no, then delte.
 }
 
 #define DEFAULT_BG_REDIRECT "/dev/null" //may need to be char* ?
@@ -323,7 +360,7 @@ int launch_background(struct command* curr_command) {
     } else if (bgchild_pid == 0) {
 
         //add signal handlers:
-        // non needed? inherits SIGINT SIG_IGN from parent.
+        set_bgchild_sighandlers();
 
         //set up redirects
         if (curr_command->output_redirect == NULL) {
@@ -369,9 +406,9 @@ int main(void) {
         if (last_fg_terminated) {
             force_report_last_fg_end();
         }
-        if (potential_zombies) {
-            remove_zombies();
-        }
+        // if (potential_zombies) {
+        //     remove_zombies();
+        // }
         printf(C_PROMPT);
         fflush(stdout);  
         struct command *curr_command = get_command(expand_str, shell_pid_str);

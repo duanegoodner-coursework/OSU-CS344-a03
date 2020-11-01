@@ -1,0 +1,16 @@
+(base) duane@galena:src$ ./smallsh
+: sleep 1 &
+background pid is 58268
+: 
+background pid 58268 is done exit value: 0
+: sleep 20 &
+background pid is 58283
+: ^C^ZEntering foreground-only mode (& is now ignored)
+: sleep 5 &
+: ^ZExiting foreground-only mode
+: sleep 3 &
+background pid is 58335
+: 
+background pid 58335 is done exit value: 0
+: Segmentation fault (core dumped)
+(base) duane@galena:src$ 

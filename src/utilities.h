@@ -7,5 +7,9 @@
 
 char* dsubstr_replace_all(char* orig, char* search, char* replace);
 char* int_to_dynstr(int n);
+char* malloc_atoi(int val);
+int strlen_int(int val);
+
+
 
 #endif
