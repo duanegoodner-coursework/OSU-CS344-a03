@@ -153,15 +153,26 @@ struct command *build_prelim_command(char** inputs, int *n_inputs) {
 
 void free_command(struct command* curr_command) {
     
-    for (int index = 0; index < curr_command->arg_count; index++) {
-        free(curr_command->args[index]);
+    if (curr_command != NULL) {
+        for (int index = curr_command->arg_count; index >= 0; index--) {
+            if (curr_command->args[index] != NULL){
+                free(curr_command->args[index]);
+            }  
+        }
+        if (curr_command->args != NULL)
+        {
+            free(curr_command->args);
+        }
+        if (curr_command->input_redirect != NULL) {
+            free(curr_command->input_redirect);
+        }
+        if (curr_command->output_redirect != NULL) {
+            free(curr_command->output_redirect);
+        }       
+
+        // free(curr_command);
     }
-    free(curr_command->args);
-
-    free(curr_command->input_redirect);
-    free(curr_command->output_redirect);
-
-    free(curr_command);
+    
 }
 
 #define COMMENT_CHAR '#'
