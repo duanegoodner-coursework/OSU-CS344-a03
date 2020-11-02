@@ -236,7 +236,7 @@ int launch_foreground(struct command* curr_command) {
             last_fg_endsig = WTERMSIG(fgchild_status);
             last_fg_terminated = true;
         }
-        // free_command(curr_command);
+        free_command(curr_command);
     }
 
     return 1; // need this val because run_flag = 1 causes main while loop to repeat
@@ -292,7 +292,7 @@ void remove_bgpid_node(struct command* curr_node, struct command* prev_node) {
             bg_list_tail = prev_node;
         } 
     }
-    // free_command(curr_node);
+    free_command(curr_node);
 }
 
 #define BG_DONE_MSG_START "background pid "
@@ -414,7 +414,7 @@ int main(void) {
         
         // Check if for empty line or comment character
         if (curr_command == NULL || is_comment(curr_command)) {
-                // free_command(curr_command);
+                free_command(curr_command);
             continue;
         }
               

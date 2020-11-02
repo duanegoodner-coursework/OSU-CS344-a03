@@ -1,17 +1,1 @@
-command.c
-command.h
-command.o
-echo
-junk
-junk2
-main.c
-main.o
-makefile
-masjunco
-morejunk
-p3testscript
-smallsh
-test
-utilities.c
-utilities.h
-utilities.o
+wc in junk out junk2; cat junk2 (10 points for returning correct numbers from wc)
