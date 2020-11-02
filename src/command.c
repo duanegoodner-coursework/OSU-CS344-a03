@@ -105,7 +105,11 @@ struct command *build_prelim_command(char** inputs, int *n_inputs) {
     int index_limit = *n_inputs;
     int arg_count = 0;
 
-    
+    curr_command->process_id = -5;  // initialize to "safe" val. this mimics example at:
+    // https://repl.it/@cs344/51zombieexc 
+
+
+
     // check if curr_command is intended to run in background
     if (is_bg_command(inputs, n_inputs)) {
         curr_command->background = true;

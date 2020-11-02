@@ -16,6 +16,7 @@ struct command
     char *input_redirect;
     char *output_redirect;
     bool background;
+    pid_t process_id;
 };
 
 char* get_input_line(void);
