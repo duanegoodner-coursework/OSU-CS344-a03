@@ -236,7 +236,7 @@ int launch_foreground(struct command* curr_command) {
             last_fg_endsig = WTERMSIG(fgchild_status);
             last_fg_terminated = true;
         }
-        // free_command(curr_command);
+        //free_command(curr_command);
     }
 
     return 1; // need this val because run_flag = 1 causes main while loop to repeat

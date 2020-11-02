@@ -170,7 +170,7 @@ void free_command(struct command* curr_command) {
             free(curr_command->output_redirect);
         }       
 
-        // free(curr_command);
+        free(curr_command);
     }
     
 }
