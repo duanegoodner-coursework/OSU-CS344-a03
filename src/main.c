@@ -249,15 +249,6 @@ void force_report_last_fg_end(void) {
     last_fg_terminated = false; 
 }
 
-// struct bgpid_node* create_bg_pidnode(pid_t process_id) {
-    
-//     struct bgpid_node* new_bg_pid_node = malloc(sizeof(struct bgpid_node));
-//     new_bg_pid_node->process_id = process_id;
-//     new_bg_pid_node->next = NULL;
-
-//     return new_bg_pid_node;
-// }
-
 void add_bg_node(struct command *curr_command) {
 // TODO: make generic functions for handling linked lists
     if (bg_list_head == NULL) {
@@ -292,7 +283,7 @@ void remove_bgpid_node(struct command* curr_node, struct command* prev_node) {
             bg_list_tail = prev_node;
         } 
     }
-    free_command(curr_node);
+    // free_command(curr_node);
 }
 
 #define BG_DONE_MSG_START "background pid "
@@ -414,7 +405,7 @@ int main(void) {
         
         // Check if for empty line or comment character
         if (curr_command == NULL || is_comment(curr_command)) {
-                free_command(curr_command);
+                //free_command(curr_command);
             continue;
         }
               

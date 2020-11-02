@@ -1,0 +1,103 @@
+PRE-SCRIPT INFO
+  Grading Script PID: 180471
+  Note: your smallsh will report a different PID when evaluating $$
+: BEGINNING TEST SCRIPT
+: 
+: --------------------
+: Using comment (5 points if only next prompt is displayed next)
+: : 
+: 
+: --------------------
+: ls (10 points for returning dir contents)
+: command.c
+command.h
+command.o
+junk
+junk2
+main.c
+main.o
+makefile
+mytestresults
+p3testscript
+smallsh
+test
+test_results
+utilities.c
+utilities.h
+utilities.o
+: 
+: 
+: --------------------
+: ls out junk
+: : : : : : cat: junk: input file is output file
+: : : : : : : : : : : cat: junk2: input file is output file
+: : : : : : The last foreground process exited normally with exit status 1
+: 
+: 
+: --------------------
+: wc in badfile (10 points for returning text error)
+: cannot open badfile for input
+: cannot open badfile for input
+: cannot open badfile for input
+: cannot open badfile for input
+: cannot open badfile for input
+: cannot open badfile for input
+: cannot open badfile for input
+: cannot open badfile for input
+: cannot open badfile for input
+: cannot open badfile for input
+: background pid is 180522
+: cannot open badfile for input
+background pid 180522 is done: exit value 1
+: 
+: 
+: --------------------
+: pkill -signal SIGTERM sleep (10 points for pid of killed process, 10 points for signal)
+: (Ignore message about Operation Not Permitted)
+: pkill: killing pid 170859 failed: Operation not permitted
+pkill: killing pid 180030 failed: Operation not permitted
+pkill: killing pid 180448 failed: Operation not permitted
+pkill: killing pid 180465 failed: Operation not permitted
+pkill: killing pid 200168 failed: Operation not permitted
+: 
+: 
+: --------------------
+: sleep 1 background (10 pts for pid of bg ps when done, 10 for exit value)
+: background pid is 180534
+: : 
+background pid 180534 is done: exit value 0
+: : 
+: --------------------
+: pwd
+: /nfs/stak/users/goodnedu/CS344/assign03/src
+: 
+: 
+: --------------------
+: cd
+: : 
+: 
+: --------------------
+: pwd (10 points for being in the HOME dir)
+: /nfs/stak/users/goodnedu
+: 
+: 
+: --------------------
+: mkdir testdir180472
+: : 
+: 
+: --------------------
+: cd testdir180472
+: : 
+: 
+: --------------------
+: pwd (5 points for being in the newly created dir)
+: /nfs/stak/users/goodnedu/testdir180472
+: --------------------
+: Testing foreground-only mode (20 points for entry & exit text AND ~5 seconds between times)
+: 
+Entering foreground-only mode (& is now ignored)
+: : Mon Nov  2 06:04:18 PST 2020
+: : Mon Nov  2 06:04:23 PST 2020
+: 
+Exiting foreground-only mode
+: : 
