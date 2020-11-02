@@ -26,15 +26,9 @@
 
 // TO DO: add fflush() after every print statement
 
-// consider adding command structure as a member of pid_node
-struct bgpid_node
-{
-    pid_t process_id;
-    struct bgpid_node *next;
-};
-struct bgpid_node *bg_list_head = NULL;
-struct bgpid_node *bg_list_tail = NULL;
 
+struct command *bg_list_head = NULL;
+struct command *bg_list_tail = NULL;
 
 int last_fg_endsig = 0;
 char* last_fg_endmsg = NO_FG_RUN_YET;
@@ -75,12 +69,13 @@ int get_bltin_index(struct command* curr_command) {
     return bltin_index;
 }
 
-void killall_bgprocs(struct bgpid_node* bgpid_list) {
+void killall_bgprocs(void) {
     // TO DO: change var names to be consistent with usage in zombie kill funct
     // Should be OK not doing and free() since program exits immediately after this funct runs
-    while (bgpid_list != NULL) {
-        kill(bgpid_list->process_id, SIGKILL);
-        bgpid_list = bgpid_list->next;
+    // Still consider doing a full free (and use part of zombie killing funct)
+    while (bg_list_head != NULL) {
+        kill(bg_list_head->process_id, SIGKILL);
+        bg_list_head = bg_list_head->next;
     }
 }
 
@@ -111,7 +106,7 @@ int status_bltin(struct command* status_command) {
 
 int exit_bltin(struct command* exit_command) {
 
-    killall_bgprocs(bg_list_head);
+    killall_bgprocs();
 
     return 0;
 }
@@ -203,14 +198,14 @@ void redirect_input(char* new_in_path) {
 int launch_foreground(struct command* curr_command) {
 
     int fgchild_status;
-    pid_t fgchild_pid = fork();
+    curr_command->process_id = fork();
 
-    if (fgchild_pid == -1) {
+    if (curr_command->process_id == -1) {
         perror("fork() failed.");
         exit(1);
     
     // child branch
-    } else if (fgchild_pid == 0) {
+    } else if (curr_command->process_id == 0) {
         
         // add signal handlers
         set_fgchild_sighandlers();
@@ -232,8 +227,8 @@ int launch_foreground(struct command* curr_command) {
 
     // parent branch
     } else {
-        fgchild_pid = waitpid(fgchild_pid, &fgchild_status, 0);
-        if (WIFEXITED(fgchild_status)) {
+        curr_command->process_id = waitpid(curr_command->process_id, &fgchild_status, 0);
+        if (WIFEXITED(fgchild_status)) {   // consider making status a member of command struct
             last_fg_endmsg = LAST_FG_EXITED;
             last_fg_endsig = WEXITSTATUS(fgchild_status);
         } else {
@@ -241,6 +236,7 @@ int launch_foreground(struct command* curr_command) {
             last_fg_endsig = WTERMSIG(fgchild_status);
             last_fg_terminated = true;
         }
+        //free_command(curr_command);
     }
 
     return 1; // need this val because run_flag = 1 causes main while loop to repeat
@@ -253,33 +249,33 @@ void force_report_last_fg_end(void) {
     last_fg_terminated = false; 
 }
 
-struct bgpid_node* create_bg_pidnode(pid_t process_id) {
+// struct bgpid_node* create_bg_pidnode(pid_t process_id) {
     
-    struct bgpid_node* new_bg_pid_node = malloc(sizeof(struct bgpid_node));
-    new_bg_pid_node->process_id = process_id;
-    new_bg_pid_node->next = NULL;
+//     struct bgpid_node* new_bg_pid_node = malloc(sizeof(struct bgpid_node));
+//     new_bg_pid_node->process_id = process_id;
+//     new_bg_pid_node->next = NULL;
 
-    return new_bg_pid_node;
-}
+//     return new_bg_pid_node;
+// }
 
-void add_bgpid_node(struct bgpid_node* new_bg_pid_node) {
+void add_bg_node(struct command *curr_command) {
 // TODO: make generic functions for handling linked lists
     if (bg_list_head == NULL) {
-        bg_list_head = new_bg_pid_node;
-        bg_list_tail = new_bg_pid_node;
+        bg_list_head = curr_command;
+        bg_list_tail = curr_command;
     } else {
-        bg_list_tail->next = new_bg_pid_node;
+        bg_list_tail->next = curr_command;
         bg_list_tail = bg_list_tail->next;  // could use new_bg_pid_node
     }
 }
 
-void start_tracking_bg(pid_t bg_process_id) {
-    add_bgpid_node(create_bg_pidnode(bg_process_id));
-    printf("background pid is %d\n", bg_process_id);
+void start_tracking_bg(struct command *curr_command) {
+    add_bg_node(curr_command);
+    printf("background pid is %d\n", curr_command->process_id);
     fflush(stdout);
 }
 
-void remove_bgpid_node(struct bgpid_node* curr_node, struct bgpid_node* prev_node) {
+void remove_bgpid_node(struct command* curr_node, struct command* prev_node) {
 // consider adding a return value that confirms removal is successful
 // consider changing variable name to dead node to match calling function name
     // write(STDOUT_FILENO, "\n1b\n", 4);
@@ -296,7 +292,7 @@ void remove_bgpid_node(struct bgpid_node* curr_node, struct bgpid_node* prev_nod
             bg_list_tail = prev_node;
         } 
     }
-    free(curr_node);
+    free_command(curr_node);
 }
 
 #define BG_DONE_MSG_START "background pid "
@@ -306,9 +302,9 @@ void remove_bgpid_node(struct bgpid_node* curr_node, struct bgpid_node* prev_nod
 void remove_zombies(void) {
     int bgchild_status;
 
-    struct bgpid_node* curr_node = bg_list_head;
-    struct bgpid_node* prev_node = NULL;
-    struct bgpid_node* dead_node = NULL;
+    struct command* curr_node = bg_list_head;
+    struct command* prev_node = NULL;
+    struct command* dead_node = NULL;
 
     while (curr_node != NULL) {
         if (waitpid(curr_node->process_id, &bgchild_status, WNOHANG)) {
@@ -317,6 +313,7 @@ void remove_zombies(void) {
             write(STDOUT_FILENO, BG_DONE_MSG_START, 15);
             write(STDOUT_FILENO, process_id_str, process_id_str_len);
             write(STDOUT_FILENO, BG_DONE_MSG_END, 10);
+            free(process_id_str);
             if (WIFEXITED(bgchild_status)) {
                 int exit_status = WEXITSTATUS(bgchild_status);
                 char* exit_status_str = malloc_atoi(exit_status);
@@ -324,6 +321,7 @@ void remove_zombies(void) {
                 write(STDOUT_FILENO, BG_EXIT_MSG, 11);
                 write(STDOUT_FILENO, exit_status_str, exit_status_str_len);
                 write(STDOUT_FILENO, NEWLINE_C_PROMPT, 3);
+                free(exit_status_str);
             } else {
                 int term_signal = WTERMSIG(bgchild_status);
                 char* term_signal_str = malloc_atoi(term_signal);
@@ -331,6 +329,7 @@ void remove_zombies(void) {
                 write(STDOUT_FILENO, BG_TERM_MSG, 21);
                 write(STDOUT_FILENO, term_signal_str, term_signal_str_len);
                 write(STDOUT_FILENO, NEWLINE, 1);
+                free(term_signal_str);
             }
             kill(curr_node->process_id, SIGKILL);
             dead_node = curr_node;
@@ -341,7 +340,7 @@ void remove_zombies(void) {
         curr_node = curr_node->next;
     }
 
-    potential_zombies = false;  // TBD if this'll be used. If decide no, then delte.
+    potential_zombies = false;  // TBD if this'll be used. If decide no, then delete.
 }
 
 #define DEFAULT_BG_REDIRECT "/dev/null" //may need to be char* ?
@@ -350,14 +349,14 @@ int launch_background(struct command* curr_command) {
 // keep separate at least until confirmed both work.
 
     int bgchild_status;
-    pid_t bgchild_pid = fork();
+    curr_command->process_id = fork();
 
-    if (bgchild_pid == -1) {
+    if (curr_command->process_id == -1) {
         perror("fork() failed.");
         exit(1);
     
     //child branch
-    } else if (bgchild_pid == 0) {
+    } else if (curr_command->process_id == 0) {
 
         //add signal handlers:
         set_bgchild_sighandlers();
@@ -382,7 +381,7 @@ int launch_background(struct command* curr_command) {
         exit(1);        
 
     } else {
-        start_tracking_bg(bgchild_pid);
+        start_tracking_bg(curr_command);
     }
 
     return 1;
@@ -415,6 +414,7 @@ int main(void) {
         
         // Check if for empty line or comment character
         if (curr_command == NULL || is_comment(curr_command)) {
+            free_command(curr_command);
             continue;
         }
               

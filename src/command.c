@@ -104,7 +104,8 @@ struct command *build_prelim_command(char** inputs, int *n_inputs) {
     int index;
     int index_limit = *n_inputs;
     int arg_count = 0;
-
+    
+    curr_command->next = NULL;
     curr_command->process_id = -5;  // initialize to "safe" val. this mimics example at:
     // https://repl.it/@cs344/51zombieexc 
 
@@ -148,6 +149,19 @@ struct command *build_prelim_command(char** inputs, int *n_inputs) {
     curr_command->args = args;
     
     return curr_command;
+}
+
+void free_command(struct command* curr_command) {
+    
+    for (int index = 0; index < curr_command->arg_count; index++) {
+        free(curr_command->args[index]);
+    }
+    free(curr_command->args);
+
+    free(curr_command->input_redirect);
+    free(curr_command->output_redirect);
+
+    free(curr_command);
 }
 
 #define COMMENT_CHAR '#'
